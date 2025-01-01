@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invisible Walls</title>
+    <link rel="stylesheet" href="css/main.css" />
+
+  </head>
+  <body>
+    <div class="popup">
+      <div class="popup__inner">
+      <h1>False Perspective Drawing</h1>
+      <p>Draw something with the left mouse button. Then, change your perspective using the right mouse button. Scroll wheel to zoom.</p>
+      <button id="hideButton">User1</button>
+      <button id="user2Button">User 2</button>
+      </div>
+
+
+      
+
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script src="third_party/three.min.js"></script>
+    <script src="third_party/OrbitControls.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <!-- <script src="third_party/gui.js"></script> -->
+
+    
+  </body>
+</html>
