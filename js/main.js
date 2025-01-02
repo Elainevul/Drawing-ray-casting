@@ -1,4 +1,4 @@
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { RGBELoader } from '../third_party/RGBELoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 
