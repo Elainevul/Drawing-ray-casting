@@ -1,6 +1,4 @@
-import { RGBELoader } from '../third_party/RGBELoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-
 
 let gCamera;
 let gScene;
@@ -8,42 +6,20 @@ let gRenderer;
 let gControls;
 let gWalls;
 let gRaycaster;
-let gSphereGeometry; // 用于创建球体的几何体
-let gSphereMaterial; // 用于创建球体的材质
-// let gRender2;
-
-
-let loader = new RGBELoader();
-loader.load("./image/rotunda_8k.hdr", (texture) => {
-  texture.mapping = THREE.EquirectangularReflectionMapping;
-  console.log(gScene);
-  gScene.background = texture;
-
-    gScene.environment = texture;
-    gSphereMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff, envMap: texture }); // 创建球体的材质
-
-});
-
+let gSphereGeometry;
+let gSphereMaterial;
 
 function random(min, max) {
   return min + Math.random() * (max - min);
 }
 
 function map(value, inMin, inMax, outMin, outMax) {
-  // Convert a value to 0.0 - 1.0
   value = (value - inMin) / (inMax - inMin);
-  // Convert to output range
   value = outMin + value * (outMax - outMin);
   return value;
 }
 
-
-   
 function setup() {
-
-//   const gui = new GUI();
-  
-
   const cameraDistance = 6;
   gCamera = new THREE.PerspectiveCamera(
     60,
@@ -56,6 +32,14 @@ function setup() {
 
   gScene = new THREE.Scene();
 
+  // 创建一个点光源，模拟光源照射
+  const pointLight = new THREE.PointLight(0xffffff, 1, 100); // 颜色，强度，距离
+  pointLight.position.set(5, 5, 5); // 点光源的位置
+  gScene.add(pointLight);
+
+  // 创建一个环境光，提供场景的基本亮度
+  const ambientLight = new THREE.AmbientLight(0x404040, 1); // 颜色和强度
+  gScene.add(ambientLight);
 
   const light1 = new THREE.HemisphereLight(0xffffff, 0x000088, 0.8);
   light1.position.set(-1, 1.5, 1);
@@ -65,50 +49,54 @@ function setup() {
   light2.position.set(1, 1.5, 1);
   gScene.add(light2);
 
-  gSphereGeometry = new THREE.SphereGeometry(0.5, 20, 20); // 创建球体的几何体
-  gSphereMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff, envMap: gScene.environment }); // 创建球体的材质
- // const material = new THREE.MeshBasicMaterial( { color: 0xffffff, envMap: textureCube } );
+  gSphereGeometry = new THREE.SphereGeometry(0.5, 20, 20);
 
+  gSphereMaterial = new THREE.MeshStandardMaterial({
+    color: 0x0000ff,  // 设置球体颜色为蓝色
+    roughness: 0.5,
+    metalness: 0.5,
+    shadowSide: THREE.FrontSide // 使小球能够投射阴影
+  });
+
+  // 创建小球并设置其投射阴影
+  const sphere = new THREE.Mesh(gSphereGeometry, gSphereMaterial);
+  sphere.castShadow = true; // 小球可以投射阴影
+  gScene.add(sphere);
+
+  // 添加GUI控制器
   const gui = new GUI();
-
-  
   const params = {
-    sphereSize: 0.5
+    sphereSize: 0.5,  // 默认球体尺寸
+    sphereColor: gSphereMaterial.color.getHex()  // 当前颜色值
   };
 
-  
+  // 添加球体尺寸控制器
   gui.add(params, 'sphereSize', 0.1, 2).onChange(updateSphereSize);
-  function updateSphereSize() {
-    gSphereMaterial.dispose();
-    gSphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, envMap: gScene.environment });
-    gSphereMaterial.needsUpdate = true;
 
+  // 添加颜色控制器
+  gui.addColor(params, 'sphereColor').name('Sphere Color').onChange((value) => {
+    gSphereMaterial.color.set(value); // 更新小球的颜色
+  });
+
+  function updateSphereSize() {
     gScene.traverse(function (object) {
       if (object instanceof THREE.Mesh && object.geometry === gSphereGeometry) {
         object.scale.set(params.sphereSize, params.sphereSize, params.sphereSize);
       }
     });
   }
- 
+
   gui.add({ resetScene: resetScene }, 'resetScene').name('Reset Scene');
 
   function resetScene() {
-    // 删除所有球体
     gScene.remove(...gScene.children.filter(child => child instanceof THREE.Mesh && child.geometry === gSphereGeometry));
-  
-    // 重置相机位置和控制器状态
     gCamera.position.set(cameraDistance, cameraDistance, cameraDistance);
     gCamera.lookAt(0, 0, 0);
     gControls.reset();
-  
-    // 恢复默认的墙体设置
     gWalls.children.forEach(wall => {
       wall.material.opacity = 0;
     });
   }
-
-
-
 
   const wallMaterial = new THREE.MeshBasicMaterial({ color: "white", transparent: true, opacity: 0 });
   const wallGeometry = new THREE.BoxGeometry();
@@ -119,8 +107,6 @@ function setup() {
     wall.scale.set(1200, 5, 1);
     wall.rotation.set(0, random(0, Math.PI * 2), 0);
     wall.position.set(random(-10, 10), 0, random(-10, 10));
-    // wall.position.set(i * 10 - 50, 0, i * 10 - 50); // 设置更小的间距
-
     gWalls.add(wall);
   }
   gScene.add(gWalls);
@@ -137,10 +123,9 @@ function setup() {
     RIGHT: THREE.MOUSE.ROTATE,
   };
 
-  
-
   gRaycaster = new THREE.Raycaster();
 }
+
 
 function animate() {
   requestAnimationFrame(animate);
@@ -164,17 +149,16 @@ function onMouseDown(e) {
 }
 
 function onMouseMove(e) {
-  // console.log(e.clientX, e.clientY);
   const mouseX = map(e.clientX, 0, window.innerWidth, -1, 1);
   const mouseY = map(e.clientY, 0, window.innerHeight, 1, -1);
   const mouseVector = new THREE.Vector3(mouseX, mouseY, 0.5);
 
   gRaycaster.setFromCamera(mouseVector, gCamera);
   const intersects = gRaycaster.intersectObjects(gWalls.children);
-  // console.log(intersects);
+
   if (intersects.length > 0) {
     const firstIntersection = intersects[0];
-    const sphere = new THREE.Mesh(gSphereGeometry, gSphereMaterial); // 使用球体的几何体和材质创建球体
+    const sphere = new THREE.Mesh(gSphereGeometry, gSphereMaterial);
     sphere.position.copy(firstIntersection.point);
     sphere.scale.multiplyScalar(firstIntersection.distance * 0.05);
     gScene.add(sphere);
@@ -193,11 +177,7 @@ window.addEventListener("mousedown", onMouseDown);
 
 document.querySelector("#hideButton").addEventListener("click", () => {
   document.querySelector(".popup").style.display = "none";
-  
 });
 document.querySelector("#user2Button").addEventListener("click", () => {
   document.querySelector(".popup").style.display = "none";
-  
 });
-
-
