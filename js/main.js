@@ -14,9 +14,9 @@ let gSphereMaterial; // 用于创建球体的材质
 
 
 let loader = new RGBELoader();
-loader.load('Drawing-ray-casting/image/rotunda_8k.hdr', (texture) => {
+loader.load('/image/rotunda_8k.hdr', (texture) => {
   texture.mapping = THREE.EquirectangularReflectionMapping;
-  console.log(gScene);
+ 
   gScene.background = texture;
 
     gScene.environment = texture;
